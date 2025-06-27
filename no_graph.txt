@@ -1,0 +1,33 @@
+
+# Parámetros
+max_iter = 100
+min_changes = int(0.1 * len(df))
+
+# Elegir 3 datos aleatorios como centroides iniciales
+np.random.seed(42)
+initial_indices = np.random.choice(df.index, K_CLUSTERS, replace=False)
+centroids = df.loc[initial_indices, ['feature_1', 'feature_2']].reset_index(drop=True)
+
+for iteration in range(max_iter):
+    cambios = 0
+    prev_classification = df['classification'].copy()
+
+    # Asignar cada punto al centroide más cercano
+    for idx, row in df.iterrows():
+        distances = np.linalg.norm(centroids.values - row[['feature_1', 'feature_2']].values, axis=1)
+        closest_centroid = np.argmin(distances)
+        if df.at[idx, 'classification'] != closest_centroid:
+            cambios += 1
+        df.at[idx, 'classification'] = closest_centroid
+
+    # Calcular nuevos centroides
+    for k in range(K_CLUSTERS):
+        cluster_points = df[df['classification'] == k][['feature_1', 'feature_2']]
+        if not cluster_points.empty:
+            centroids.loc[k] = cluster_points.mean().values
+
+    # Parar si los cambios son menores al 10% del tamaño del df
+    if cambios < min_changes:
+        print(f"Iteración {iteration + 1}: Cambios menores al 10% del tamaño del DataFrame. Terminando.")
+        break
+    
